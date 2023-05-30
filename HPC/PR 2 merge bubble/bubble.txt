@@ -1,0 +1,88 @@
+#include <iostream>
+#include <cstdlib>
+#include <omp.h>
+
+void bubble_sort(float* arr, int n) {
+    bool swapped;
+    for (int i = 0; i < n - 1; i++) {
+        swapped = false;
+#pragma omp parallel for shared(arr, swapped)
+        for (int j = 0; j < n - i - 1; j++) {
+            if (arr[j] > arr[j + 1]) {
+                std::swap(arr[j], arr[j + 1]);
+                swapped = true;
+            }
+        }
+        if (!swapped) {
+            break;
+        }
+    }
+}
+
+
+void seq_bubble_sort(float* arr, int n) {
+    bool swapped;
+    for (int i = 0; i < n - 1; i++) {
+        swapped = false;
+        for (int j = 0; j < n - i - 1; j++) {
+            if (arr[j] > arr[j + 1]) {
+                std::swap(arr[j], arr[j + 1]);
+                swapped = true;
+            }
+        }
+        if (!swapped) {
+            break;
+        }
+    }
+}
+
+
+int main() {
+    int n;
+    std::cout << "Enter the size of the array: ";
+    std::cin >> n;
+
+    float* arr = new float[n];
+
+    // Initialize array with user input
+    std::cout << "Enter the elements of the array: ";
+    for (int i = 0; i < n; i++) {
+        std::cin >> arr[i];
+    }
+   float* arr_b = new float[n];
+	for (int i = 0; i < n; i++) {
+        arr_b[i]= arr[i];
+    }
+
+
+    // Perform parallel bubble sort
+    double start_time = omp_get_wtime();
+    bubble_sort(arr, n);
+    double end_time = omp_get_wtime();
+
+    std::cout << "Sorted array by Parallel Algorithm: ";
+    for (int i = 0; i < n; i++) {
+        std::cout << arr[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Parallel algorithm Execution time: " << end_time - start_time << " seconds" << std::endl;
+   
+// Perform sequential bubble sort
+    double st = omp_get_wtime();
+    seq_bubble_sort(arr_b, n);
+     double dt = omp_get_wtime();
+
+    std::cout << "Sorted array by sequential Algorithm: ";
+    for (int i = 0; i < n; i++) {
+        std::cout << arr_b[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Sequential algorithm Execution time: " << dt - st<< " seconds" << std::endl;
+   
+
+    delete[] arr;
+
+    return 0;
+}

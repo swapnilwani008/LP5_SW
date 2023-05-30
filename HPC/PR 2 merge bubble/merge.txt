@@ -1,0 +1,98 @@
+#include <iostream>
+#include <cstdlib>
+#include <omp.h>
+
+void merge(float* a, int n, float* b, int m, float* c) {
+    int i, j, k;
+    i = 0;
+    j = 0;
+    k = 0;
+    while (i < n && j < m) {
+        if (a[i] < b[j]) {
+            c[k] = a[i];
+            i++;
+        }
+        else {
+            c[k] = b[j];
+            j++;
+        }
+        k++;
+    }
+    while (i < n) {
+        c[k] = a[i];
+        i++;
+        k++;
+    }
+    while (j < m) {
+        c[k] = b[j];
+        j++;
+        k++;
+    }
+}
+
+void merge_sort(float* a, int n, float* b) {
+    int i;
+    if (n < 2) {
+        return;
+    }
+#pragma omp parallel sections shared(a, b, n)
+    {
+#pragma omp section
+        merge_sort(a, n / 2, b);
+#pragma omp section
+        merge_sort(a + n / 2, n - n / 2, b);
+    }
+    merge(a, n / 2, a + n / 2, n - n / 2, b);
+    for (i = 0; i < n; i++) {
+        a[i] = b[i];
+    }
+}
+
+int main() {
+    double start_time, end_time;
+
+    int n;
+    std::cout << "Enter the size of the array: ";
+    std::cin >> n;
+
+    float* a = new float[n];
+    float* b = new float[n];
+
+    // Initialize array a with user input
+    std::cout << "Enter the elements of the array: ";
+    for (int i = 0; i < n; i++) {
+        std::cin >> a[i];
+    }
+
+    // Copy array a to array b
+    for (int i = 0; i < n; i++) {
+        b[i] = a[i];
+    }
+    start_time = omp_get_wtime();
+    merge_sort(a, n, b);
+    end_time = omp_get_wtime();
+    std::cout << "Sequential merge sort took " << end_time - start_time << " seconds" << std::endl;
+    std::cout << "Sequential merge sort result: ";
+    for (int i = 0; i < n; i++) {
+        std::cout << a[i] << " ";
+    }
+    std::cout << std::endl;
+    // Perform parallel merge sort
+    start_time = omp_get_wtime();
+#pragma omp parallel shared(a, b, n)
+    {
+#pragma omp single
+        merge_sort(a, n, b);
+    }
+    end_time = omp_get_wtime();
+    std::cout << "Parallel merge sort took " << end_time - start_time << " seconds" << std::endl;
+
+    std::cout << "Parallel merge sort result: ";
+    for (int i = 0; i < n; i++) {
+        std::cout << a[i] << " ";
+    }
+    std::cout << std::endl;
+    delete[] a;
+    delete[] b;
+    return 0;
+}
